@@ -9,9 +9,11 @@ from keras.callbacks import ModelCheckpoint
 import tensorflow as tf
 import glob
 import sys
+from keras import backend as K
+from keras.losses import binary_crossentropy
+
 
 def find_latest_checkpoint(checkpoints_path, fail_safe=True):
-
     # This is legacy code, there should always be a "checkpoint" file in your directory
 
     def get_epoch_number_from_path(path):
@@ -40,6 +42,32 @@ def find_latest_checkpoint(checkpoints_path, fail_safe=True):
                                   int(get_epoch_number_from_path(f)))
 
     return latest_epoch_checkpoint
+
+
+def dice_coef(y_true, y_pred, smooth=1):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+
+
+def dice_loss(y_true, y_pred):
+    smooth = 1.
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    y_true_f = tf.cast(y_true_f, tf.float32)
+
+    # print(y_true_f.dtype)
+    # print(y_pred_f.dtype)
+    intersection = y_true_f * y_pred_f
+
+    score = (2. * K.sum(intersection) + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+    return 1. - score
+
+
+def bce_dice_loss(y_true, y_pred):
+    return binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
+
 
 def masked_categorical_crossentropy(gt, pr):
     from keras.losses import categorical_crossentropy
@@ -83,11 +111,13 @@ def train(model,
           callbacks=None,
           custom_augmentation=None,
           other_inputs_paths=None,
+          metric='accuracy',
           preprocessing=None,
+          loss_k='categorical_crossentropy',
           read_image_type=1  # cv2.IMREAD_COLOR = 1 (rgb),
-                             # cv2.IMREAD_GRAYSCALE = 0,
-                             # cv2.IMREAD_UNCHANGED = -1 (4 channels like RGBA)
-         ):
+          # cv2.IMREAD_GRAYSCALE = 0,
+          # cv2.IMREAD_UNCHANGED = -1 (4 channels like RGBA)
+          ):
     from .models.all_models import model_from_name
     # check if user gives model name instead of the model object
     if isinstance(model, six.string_types):
@@ -110,21 +140,28 @@ def train(model,
         assert val_annotations is not None
 
     if optimizer_name is not None:
+        if loss_k == "categorical_crossentropy":
 
-        if ignore_zero_class:
-            loss_k = masked_categorical_crossentropy
-        else:
-            loss_k = 'categorical_crossentropy'
+            if ignore_zero_class:
+                loss_k = masked_categorical_crossentropy
+                metric = 'accuracy'
+            else:
+                loss_k = 'categorical_crossentropy'
+                metric = 'accuracy'
+
+        elif loss_k == "bce_dice_loss":
+            loss_k = bce_dice_loss
+            metric = dice_coef
 
         model.compile(loss=loss_k,
                       optimizer=optimizer_name,
-                      metrics=['accuracy'])
+                      metrics=[metric])
 
     if checkpoints_path is not None:
         config_file = checkpoints_path + "_config.json"
         dir_name = os.path.dirname(config_file)
 
-        if ( not os.path.exists(dir_name) )  and len( dir_name ) > 0 :
+        if (not os.path.exists(dir_name)) and len(dir_name) > 0:
             os.makedirs(dir_name)
 
         with open(config_file, "w") as f:
@@ -166,7 +203,7 @@ def train(model,
             assert verified
 
     train_gen = image_segmentation_generator(
-        train_images, train_annotations,  batch_size,  n_classes,
+        train_images, train_annotations, batch_size, n_classes,
         input_height, input_width, output_height, output_width,
         do_augment=do_augment, augmentation_name=augmentation_name,
         custom_augmentation=custom_augmentation, other_inputs_paths=other_inputs_paths,
@@ -174,19 +211,19 @@ def train(model,
 
     if validate:
         val_gen = image_segmentation_generator(
-            val_images, val_annotations,  val_batch_size,
+            val_images, val_annotations, val_batch_size,
             n_classes, input_height, input_width, output_height, output_width,
             other_inputs_paths=other_inputs_paths,
             preprocessing=preprocessing, read_image_type=read_image_type)
 
-    if callbacks is None and (not checkpoints_path is  None) :
+    if callbacks is None and (not checkpoints_path is None):
         default_callback = ModelCheckpoint(
-                filepath=checkpoints_path + ".{epoch:05d}",
-                save_weights_only=True,
-                verbose=True
-            )
+            filepath=checkpoints_path + ".{epoch:05d}",
+            save_weights_only=True,
+            verbose=True
+        )
 
-        if sys.version_info[0] < 3: # for pyhton 2 
+        if sys.version_info[0] < 3:  # for pyhton 2
             default_callback = CheckpointsCallback(checkpoints_path)
 
         callbacks = [
