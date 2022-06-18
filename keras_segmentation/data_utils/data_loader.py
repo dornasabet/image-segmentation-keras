@@ -15,9 +15,9 @@ try:
 except ImportError:
     print("tqdm not found, disabling progress bars")
 
+
     def tqdm(iter):
         return iter
-
 
 from ..models.config import IMAGE_ORDERING
 from .augmentation import augment_seg, custom_augment_seg
@@ -28,7 +28,6 @@ random.seed(DATA_LOADER_SEED)
 class_colors = [(random.randint(0, 255), random.randint(
     0, 255), random.randint(0, 255)) for _ in range(5000)]
 
-
 ACCEPTABLE_IMAGE_FORMATS = [".jpg", ".jpeg", ".png", ".bmp"]
 ACCEPTABLE_SEGMENTATION_FORMATS = [".png", ".bmp"]
 
@@ -37,14 +36,13 @@ class DataLoaderError(Exception):
     pass
 
 
-
-def get_image_list_from_path(images_path ):
+def get_image_list_from_path(images_path):
     image_files = []
     for dir_entry in os.listdir(images_path):
-            if os.path.isfile(os.path.join(images_path, dir_entry)) and \
-                    os.path.splitext(dir_entry)[1] in ACCEPTABLE_IMAGE_FORMATS:
-                file_name, file_extension = os.path.splitext(dir_entry)
-                image_files.append(os.path.join(images_path, dir_entry))
+        if os.path.isfile(os.path.join(images_path, dir_entry)) and \
+                os.path.splitext(dir_entry)[1] in ACCEPTABLE_IMAGE_FORMATS:
+            file_name, file_extension = os.path.splitext(dir_entry)
+            image_files.append(os.path.join(images_path, dir_entry))
     return image_files
 
 
@@ -52,8 +50,6 @@ def get_pairs_from_paths(images_path, segs_path, ignore_non_matching=False, othe
     """ Find all the images from the images_path directory and
         the segmentation images from the segs_path directory
         while checking integrity of data """
-
-
 
     image_files = []
     segmentation_files = {}
@@ -83,7 +79,7 @@ def get_pairs_from_paths(images_path, segs_path, ignore_non_matching=False, othe
 
     for dir_entry in os.listdir(segs_path):
         if os.path.isfile(os.path.join(segs_path, dir_entry)) and \
-           os.path.splitext(dir_entry)[1] in ACCEPTABLE_SEGMENTATION_FORMATS:
+                os.path.splitext(dir_entry)[1] in ACCEPTABLE_SEGMENTATION_FORMATS:
             file_name, file_extension = os.path.splitext(dir_entry)
             full_dir_entry = os.path.join(segs_path, dir_entry)
             if file_name in segmentation_files:
@@ -162,7 +158,7 @@ def get_image_array(image_input,
     elif imgNorm == "divide":
         img = cv2.resize(img, (width, height))
         img = img.astype(np.float32)
-        img = img/255.0
+        img = img / 255.0
 
     if ordering == 'channels_first':
         img = np.rollaxis(img, 2, 0)
@@ -170,7 +166,7 @@ def get_image_array(image_input,
 
 
 def get_segmentation_array(image_input, nClasses,
-                           width, height, no_reshape=False, read_image_type=1):
+                           width, height, no_reshape=False, read_image_type=1, ignore_zero_class=False):
     """ Load segmentation array from input """
 
     seg_labels = np.zeros((height, width, nClasses))
@@ -191,11 +187,15 @@ def get_segmentation_array(image_input, nClasses,
     img = cv2.resize(img, (width, height), interpolation=cv2.INTER_NEAREST)
     img = img[:, :, 0]
 
-    for c in range(nClasses):
-        seg_labels[:, :, c] = (img == c).astype(int)
+    if ignore_zero_class:
+        for c in range(1, nClasses + 1):
+            seg_labels[:, :, c] = (img == c).astype(int)
+    else:
+        for c in range(0, nClasses):
+            seg_labels[:, :, c] = (img == c).astype(int)
 
     if not no_reshape:
-        seg_labels = np.reshape(seg_labels, (width*height, nClasses))
+        seg_labels = np.reshape(seg_labels, (width * height, nClasses))
 
     return seg_labels
 
@@ -249,18 +249,15 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
                                  augmentation_name="aug_all",
                                  custom_augmentation=None,
                                  other_inputs_paths=None, preprocessing=None,
-                                 read_image_type=cv2.IMREAD_COLOR , ignore_segs=False ):
-    
-
+                                 read_image_type=cv2.IMREAD_COLOR, ignore_segs=False):
     if not ignore_segs:
         img_seg_pairs = get_pairs_from_paths(images_path, segs_path, other_inputs_paths=other_inputs_paths)
         random.shuffle(img_seg_pairs)
         zipped = itertools.cycle(img_seg_pairs)
     else:
-        img_list = get_image_list_from_path( images_path )
-        random.shuffle( img_list )
-        img_list_gen = itertools.cycle( img_list )
-
+        img_list = get_image_list_from_path(images_path)
+        random.shuffle(img_list)
+        img_list_gen = itertools.cycle(img_list)
 
     while True:
         X = []
@@ -269,18 +266,17 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
             if other_inputs_paths is None:
 
                 if ignore_segs:
-                    im = next( img_list_gen )
-                    seg = None 
+                    im = next(img_list_gen)
+                    seg = None
                 else:
                     im, seg = next(zipped)
                     seg = cv2.imread(seg, 1)
 
                 im = cv2.imread(im, read_image_type)
-                
 
                 if do_augment:
 
-                    assert ignore_segs == False , "Not supported yet"
+                    assert ignore_segs == False, "Not supported yet"
 
                     if custom_augmentation is None:
                         im, seg[:, :, 0] = augment_seg(im, seg[:, :, 0],
@@ -296,7 +292,7 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
                                          input_height, ordering=IMAGE_ORDERING))
             else:
 
-                assert ignore_segs == False , "Not supported yet"
+                assert ignore_segs == False, "Not supported yet"
 
                 im, seg, others = next(zipped)
 
