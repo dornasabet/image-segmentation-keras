@@ -243,10 +243,9 @@ def train(model,
         model.fit(train_gen, steps_per_epoch=steps_per_epoch,
                   epochs=epochs, callbacks=callbacks, initial_epoch=initial_epoch)
     else:
-        model.fit_generator(train_gen,
-                            steps_per_epoch=steps_per_epoch,
-                            validation_data=val_gen,
-                            validation_steps=val_steps_per_epoch,
-                            epochs=epochs, callbacks=callbacks,
-                            use_multiprocessing=gen_use_multiprocessing, initial_epoch=initial_epoch,
-                            class_weight=class_weights)
+        model.fit(train_gen,
+                  steps_per_epoch=steps_per_epoch,
+                  validation_data=val_gen,
+                  validation_steps=val_steps_per_epoch,
+                  epochs=epochs, callbacks=callbacks,
+                  use_multiprocessing=gen_use_multiprocessing, initial_epoch=initial_epoch, class_weight=class_weights)
