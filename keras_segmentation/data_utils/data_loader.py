@@ -249,7 +249,7 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
                                  augmentation_name="aug_all",
                                  custom_augmentation=None,
                                  other_inputs_paths=None, preprocessing=None,
-                                 read_image_type=cv2.IMREAD_COLOR, ignore_segs=False):
+                                 read_image_type=cv2.IMREAD_COLOR, ignore_segs=False, ignore_zero_class=False):
     if not ignore_segs:
         img_seg_pairs = get_pairs_from_paths(images_path, segs_path, other_inputs_paths=other_inputs_paths)
         random.shuffle(img_seg_pairs)
@@ -331,7 +331,7 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
 
             if not ignore_segs:
                 Y.append(get_segmentation_array(
-                    seg, n_classes, output_width, output_height))
+                    seg, n_classes, output_width, output_height, ignore_zero_class))
 
         if ignore_segs:
             yield np.array(X)
