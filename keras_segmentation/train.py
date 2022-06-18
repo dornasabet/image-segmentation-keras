@@ -114,6 +114,7 @@ def train(model,
           do_augment=False,
           augmentation_name="aug_all",
           callbacks=None,
+          class_weights=None,
           custom_augmentation=None,
           other_inputs_paths=None,
           metric='accuracy',
@@ -247,4 +248,4 @@ def train(model,
                   validation_data=val_gen,
                   validation_steps=val_steps_per_epoch,
                   epochs=epochs, callbacks=callbacks,
-                  use_multiprocessing=gen_use_multiprocessing, initial_epoch=initial_epoch)
+                  use_multiprocessing=gen_use_multiprocessing, initial_epoch=initial_epoch, class_weight=class_weights)
