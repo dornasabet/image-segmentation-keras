@@ -189,7 +189,7 @@ def get_segmentation_array(image_input, nClasses,
 
     if ignore_zero_class:
         for c in range(1, nClasses + 1):
-            seg_labels[:, :, c] = (img == c).astype(int)
+            seg_labels[:, :, c-1] = (img == c).astype(int)
     else:
         for c in range(0, nClasses):
             seg_labels[:, :, c] = (img == c).astype(int)
