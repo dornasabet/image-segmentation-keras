@@ -331,7 +331,7 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
 
             if not ignore_segs:
                 Y.append(get_segmentation_array(
-                    seg, n_classes, output_width, output_height, ignore_zero_class))
+                    seg, n_classes, output_width, output_height, ignore_zero_class=ignore_zero_class))
 
         if ignore_segs:
             yield np.array(X)
