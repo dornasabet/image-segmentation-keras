@@ -78,7 +78,7 @@ def get_segmentation_model(input, output):
         input_height = i_shape[2]
         input_width = i_shape[3]
         n_classes = o_shape[1]
-        o = (Reshape((-1, output_height*output_width)))(o)
+        # o = (Reshape((-1, output_height*output_width)))(o)
         o = (Permute((2, 1)))(o)
     elif IMAGE_ORDERING == 'channels_last':
         output_height = o_shape[1]
@@ -86,9 +86,9 @@ def get_segmentation_model(input, output):
         input_height = i_shape[1]
         input_width = i_shape[2]
         n_classes = o_shape[3]
-        o = (Reshape((output_height*output_width, -1)))(o)
+        # o = (Reshape((output_height*output_width, -1)))(o)
 
-    o = (Activation('softmax'))(o)
+    o = (Activation('sigmoid'))(o)
     model = Model(img_input, o)
     model.output_width = output_width
     model.output_height = output_height

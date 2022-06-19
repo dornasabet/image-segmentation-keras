@@ -159,6 +159,10 @@ def get_image_array(image_input,
         img = cv2.resize(img, (width, height))
         img = img.astype(np.float32)
         img = img / 255.0
+    elif imgNorm == None :
+        img = cv2.resize(img, (width, height))
+        img = img.astype(np.float32)
+
 
     if ordering == 'channels_first':
         img = np.rollaxis(img, 2, 0)
@@ -331,7 +335,7 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
 
             if not ignore_segs:
                 Y.append(get_segmentation_array(
-                    seg, n_classes, output_width, output_height, ignore_zero_class=ignore_zero_class))
+                    seg, n_classes, output_width, output_height, ignore_zero_class=ignore_zero_class, no_reshape=True))
 
         if ignore_segs:
             yield np.array(X)
