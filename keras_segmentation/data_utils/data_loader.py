@@ -127,7 +127,7 @@ def get_pairs_from_paths(images_path, segs_path, ignore_non_matching=False, othe
 
 def get_image_array(image_input,
                     width, height,
-                    imgNorm="sub_mean", ordering='channels_first', read_image_type=1):
+                    imgNorm="sub_and_divide", ordering='channels_first', read_image_type=1):
     """ Load image array from input """
 
     if type(image_input) is np.ndarray:
@@ -159,10 +159,9 @@ def get_image_array(image_input,
         img = cv2.resize(img, (width, height))
         img = img.astype(np.float32)
         img = img / 255.0
-    elif imgNorm == None :
+    elif imgNorm == None:
         img = cv2.resize(img, (width, height))
         img = img.astype(np.float32)
-
 
     if ordering == 'channels_first':
         img = np.rollaxis(img, 2, 0)
@@ -193,7 +192,7 @@ def get_segmentation_array(image_input, nClasses,
 
     if ignore_zero_class:
         for c in range(1, nClasses + 1):
-            seg_labels[:, :, c-1] = (img == c).astype(int)
+            seg_labels[:, :, c - 1] = (img == c).astype(int)
     else:
         for c in range(0, nClasses):
             seg_labels[:, :, c] = (img == c).astype(int)
