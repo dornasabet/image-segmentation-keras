@@ -162,7 +162,7 @@ def train(model,
 
         model.compile(loss=loss_k,
                       optimizer=optimizer_name,
-                      metrics=[metric, tf.keras.metrics.MeanIoU(num_classes=model.n_classes)])
+                      metrics=[metric])
 
     if checkpoints_path is not None:
         config_file = checkpoints_path + "_config.json"
