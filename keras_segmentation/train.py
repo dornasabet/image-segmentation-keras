@@ -11,6 +11,8 @@ import glob
 import sys
 from keras import backend as K
 from keras.losses import binary_crossentropy
+import tensorflow as tf
+from metrics import get_iou
 
 
 def find_latest_checkpoint(checkpoints_path, fail_safe=True):
@@ -161,7 +163,7 @@ def train(model,
 
         model.compile(loss=loss_k,
                       optimizer=optimizer_name,
-                      metrics=[metric])
+                      metrics=[metric, tf.keras.metrics.MeanIoU(num_classes=model.n_classes)])
 
     if checkpoints_path is not None:
         config_file = checkpoints_path + "_config.json"
