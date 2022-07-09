@@ -12,7 +12,6 @@ import sys
 from keras import backend as K
 from keras.losses import binary_crossentropy
 import tensorflow as tf
-from metrics import get_iou
 
 
 def find_latest_checkpoint(checkpoints_path, fail_safe=True):
