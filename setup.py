@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 import sys
 
 cv_ver = ""
-keras_ver = ">=2.0.0"
+keras_ver = ">=2.3.0"
 if sys.version_info.major < 3:
       cv_ver = "<=4.2.0.32" 
       keras_ver = "<=2.3.0"
